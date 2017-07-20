@@ -7,31 +7,35 @@ var Twit = require('twit');
 var config = require('./keys.js');
 var fs = require("fs");
 
+var apiToSearch = process.argv[2];
+var searchTerm = process.argv.splice(3);
+
 //Check if log.txt file exists if not write the file
 fs.stat('log.txt', function(err, stat) {
     if(err == null) {
-        console.log('File exists');
+        appendSearchTerms();
+        runRequest();
     } else if(err.code == 'ENOENT') {
         fs.writeFile("log.txt", "SEARCH LOG\n------------------------------------------------------", function(err) {
           if (err) {
             return console.log(err);
           }
+        appendSearchTerms();
+        runRequest();
         });
     } else {
         console.log('Some other error: ', err.code);
     }
 });
 
-var apiToSearch = process.argv[2];
-var searchTerm = process.argv.splice(3);
-
+function appendSearchTerms(){
 fs.appendFile("log.txt", "\nSEARCH: " + apiToSearch + ", " + searchTerm.join(" "), function(err) {
   if (err) {
     return console.log(err);
   }
 });
+}
 
-runRequest();
 
 function runRequest() {
   switch (apiToSearch) {
@@ -64,7 +68,7 @@ function imdb() {
     if (!error && response.statusCode === 200) {
 
       var output = "\nTitle: " + JSON.parse(body).Title + "\nIMDB Rating: " + JSON.parse(body).imdbRating + "\nRelease Year: " + JSON.parse(body).Year + "\nCountry: " + JSON.parse(body).Country + "\nLanguage: " + JSON.parse(body).Language + "\nPlot: " + JSON.parse(body).Plot +
-        "\nActors: " + JSON.parse(body).Actors + "\n------------------------------------------";
+        "\nActors: " + JSON.parse(body).Actors;
       //console.log("Rotten Tomatoes URL: " + JSON.parse(body).Ratings[1].Url);
       //console.log(JSON.parse(body));
 
@@ -87,7 +91,7 @@ function spotify() {
     })
     .then(function(response) {
 
-      var output="\nAlbum Name: " + response.tracks.items[0].album.name+"\nArtist Name: " + response.tracks.items[0].artists[0].name+"\nPreview URL: " + response.tracks.items[0].preview_url+"\nSong Name: " + response.tracks.items[0].name+"\n-----------------------------------------------";
+      var output="\nAlbum Name: " + response.tracks.items[0].album.name+"\nArtist Name: " + response.tracks.items[0].artists[0].name+"\nPreview URL: " + response.tracks.items[0].preview_url+"\nSong Name: " + response.tracks.items[0].name;
 
       displayAndWrite(output);
     })
@@ -109,7 +113,7 @@ function tweet() {
       var newstr;
       for (var i = 0; i < tweets.length; i++) {
         //console.log(tweets[0]);
-        output=output.concat("\nTweet: " + tweets[i].text+"\nTime of Tweet: " + tweets[i].created_at+"\n----------------------------------------");
+        output=output.concat("\nTweet: " + tweets[i].text+"\nTime of Tweet: " + tweets[i].created_at+"\n~~~~");
       }
       displayAndWrite(output);
     }
@@ -139,7 +143,7 @@ function random() {
 
 function displayAndWrite(output){
   console.log(output);
-  fs.appendFile("log.txt", "\n<----RESULTS----> " + output, function(err) {
+  fs.appendFile("log.txt", "\n<----RESULTS----> " + output +"\n----------------------------------------------", function(err) {
     if (err) {
       return console.log(err);
     }
