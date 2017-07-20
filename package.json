@@ -1,0 +1,25 @@
+{
+  "name": "liri",
+  "version": "1.0.0",
+  "description": "Like siri but dumber",
+  "main": "keys.js",
+  "dependencies": {
+    "node-spotify-api": "^1.0.5",
+    "request": "^2.81.0",
+    "twit": "^2.2.9"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Maya-Tea/Liri.git"
+  },
+  "author": "Mayat",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Maya-Tea/Liri/issues"
+  },
+  "homepage": "https://github.com/Maya-Tea/Liri#readme"
+}
