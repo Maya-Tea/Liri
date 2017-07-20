@@ -6,76 +6,90 @@ var Spotify = require('node-spotify-api');
 var Twit = require('twit');
 var config = require('./keys.js');
 var fs = require("fs");
-// Grab the movieName which will always be the third node argument.
+
+//Check if log.txt file exists if not write the file
+fs.stat('log.txt', function(err, stat) {
+    if(err == null) {
+        console.log('File exists');
+    } else if(err.code == 'ENOENT') {
+        fs.writeFile("log.txt", "SEARCH LOG\n------------------------------------------------------", function(err) {
+          if (err) {
+            return console.log(err);
+          }
+        });
+    } else {
+        console.log('Some other error: ', err.code);
+    }
+});
+
 var apiToSearch = process.argv[2];
 var searchTerm = process.argv.splice(3);
+
+fs.appendFile("log.txt", "\nSEARCH: " + apiToSearch + ", " + searchTerm.join(" "), function(err) {
+  if (err) {
+    return console.log(err);
+  }
+});
+
 runRequest();
-// Then run a request to the OMDB API with the movie specified
-function runRequest(){
-switch (apiToSearch) {
-  case "spotify-this-song":
-    spotify();
-    break;
 
-  case "movie-this":
-    imdb();
-    break;
+function runRequest() {
+  switch (apiToSearch) {
+    case "spotify-this-song":
+      spotify();
+      break;
 
-  case "my-tweets":
-    tweet();
-    break;
+    case "movie-this":
+      imdb();
+      break;
 
-  case "do-what-it-says":
-    random();
-    break;
-}
+    case "my-tweets":
+      tweet();
+      break;
+
+    case "do-what-it-says":
+      random();
+      break;
+  }
 };
 
 function imdb() {
-  var queryUrl = "http://www.omdbapi.com/?t=" + searchTerm + "&y=&plot=short&apikey=40e9cece";
+  console.log(searchTerm);
+  if (!searchTerm.toString()) {
+    searchTerm = "Coraline";
+  }
+  var queryUrl = "http://www.omdbapi.com/?t=" + searchTerm + "&y=&plot=short&apikey=" + config.imdbKey;
   request(queryUrl, function(error, response, body) {
-    // If the request is successful
+
     if (!error && response.statusCode === 200) {
-      // Parse the body of the site and recover just the imdbRating
-      // (Note: The syntax below for parsing isn't obvious. Just spend a few moments dissecting it).
-      console.log("Title: " + JSON.parse(body).Title);
-      console.log("IMDB Rating: " + JSON.parse(body).imdbRating);
-      console.log("Release Year: " + JSON.parse(body).Year);
-      console.log("Country: " + JSON.parse(body).Country);
-      console.log("Language: " + JSON.parse(body).Language);
-      console.log("Plot: " + JSON.parse(body).Plot);
-      console.log("Actors: " + JSON.parse(body).Actors);
-      console.log("--------------------------------------")
+
+      var output = "\nTitle: " + JSON.parse(body).Title + "\nIMDB Rating: " + JSON.parse(body).imdbRating + "\nRelease Year: " + JSON.parse(body).Year + "\nCountry: " + JSON.parse(body).Country + "\nLanguage: " + JSON.parse(body).Language + "\nPlot: " + JSON.parse(body).Plot +
+        "\nActors: " + JSON.parse(body).Actors + "\n------------------------------------------";
       //console.log("Rotten Tomatoes URL: " + JSON.parse(body).Ratings[1].Url);
       //console.log(JSON.parse(body));
+
+      displayAndWrite(output);
     }
   });
 };
 
 function spotify() {
-  var spotify = new Spotify({
-    id: "5e13bf944c6044edb7e8a44e43e6c9ac",
-    secret: "937c2eeeb01d4696b4a39a690dcde18d"
-    //limit: 1;
-  });
+  if (!searchTerm.toString()) {
+    searchTerm = "My mind is an echo chamber";
+  }
+  var spotify = new Spotify(config.spotifyKeys);
 
   spotify
     .search({
       type: 'track',
       query: searchTerm,
-      limit: 5
+      limit: 1
     })
     .then(function(response) {
-      //var responseParse=JSON.parse(response);
-      //console.log(response.tracks.items);
-      for (var i = 0; i < response.tracks.items.length; i++) {
-        //console.log("Artists: "+JSON.stringify(response.tracks.items[1]));
-        console.log("Album Name: " + response.tracks.items[i].album.name);
-        console.log("Artist Name: " + response.tracks.items[i].artists[0].name);
-        console.log("Preview URL: " + response.tracks.items[i].preview_url);
-        console.log("Song Name: " + response.tracks.items[i].name);
-        console.log("-----------------------------------------------")
-      }
+
+      var output="\nAlbum Name: " + response.tracks.items[0].album.name+"\nArtist Name: " + response.tracks.items[0].artists[0].name+"\nPreview URL: " + response.tracks.items[0].preview_url+"\nSong Name: " + response.tracks.items[0].name+"\n-----------------------------------------------";
+
+      displayAndWrite(output);
     })
     .catch(function(err) {
       console.log(err);
@@ -83,23 +97,21 @@ function spotify() {
 }
 
 function tweet() {
-
-
-  var T = new Twit(config.twitterKeys); //this is the object of twit which
+  var T = new Twit(config.twitterKeys);
   var params = {
-    //q: 'akshay',
+    //q: 'May Winter',
     screen_name: 'May Winter',
     count: 20
   }
   T.get('statuses/user_timeline', params, function(error, tweets, response) {
     if (!error) {
+      var output="";
+      var newstr;
       for (var i = 0; i < tweets.length; i++) {
         //console.log(tweets[0]);
-        console.log("Text: "+tweets[i].text);
-        console.log("Time of Tweet: "+tweets[i].created_at)
-        console.log("----------------------------------------");
+        output=output.concat("\nTweet: " + tweets[i].text+"\nTime of Tweet: " + tweets[i].created_at+"\n----------------------------------------");
       }
-
+      displayAndWrite(output);
     }
   });
 
@@ -109,23 +121,27 @@ function tweet() {
   // console.log(data);
   // }
 };
-function random(){
-fs.readFile("random.txt", "utf8", function(error, dat) {
 
-  if (error) {
-    return console.log(error);
-  }
+function random() {
+  fs.readFile("random.txt", "utf8", function(error, dat) {
 
-  //console.log(dat);
+    if (error) {
+      return console.log(error);
+    }
 
-  var dataArr = dat.split(",");
-  apiToSearch = dataArr[0];
-  searchTerm = dataArr[1];
-  runRequest();
-  //console.log(dataArr);
-  //for(var i=0; i<dataArr.length; i++){
-  //  console.log("api:"+dataArr[0]);
-  //console.log("song"+dataArr[1])
-  //}
-});
+    var dataArr = dat.split(",");
+    apiToSearch = dataArr[0];
+    searchTerm = dataArr[1];
+    runRequest();
+
+  });
 };
+
+function displayAndWrite(output){
+  console.log(output);
+  fs.appendFile("log.txt", "\n<----RESULTS----> " + output, function(err) {
+    if (err) {
+      return console.log(err);
+    }
+  });
+}
