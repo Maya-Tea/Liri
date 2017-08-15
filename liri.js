@@ -1,5 +1,4 @@
-var client_ID = "5e13bf944c6044edb7e8a44e43e6c9ac";
-var client_Secret = "937c2eeeb01d4696b4a39a690dcde18d";
+
 var beginSpotUrl = "https://api.spotify.com"
 var request = require("request");
 var Spotify = require('node-spotify-api');
@@ -79,7 +78,7 @@ function imdb() {
 
 function spotify() {
   if (!searchTerm.toString()) {
-    searchTerm = "My mind is an echo chamber";
+   searchTerm = "My mind is an echo chamber";
   }
   var spotify = new Spotify(config.spotifyKeys);
 
